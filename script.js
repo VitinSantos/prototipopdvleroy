@@ -230,28 +230,11 @@ function mudarAba(aba) {
     if (aba === 'cargos') carregarCargos();
     if (aba === 'permissoes') carregarPermissoesTela();
     if (aba === 'perfil') carregarPerfil();
-
-    // Fecha a sidebar automaticamente no mobile após selecionar uma opção
-    fecharSidebarMobile();
 }
 
-// ==========================================
-// MÓDULO SIDEBAR & MOBILE OVERLAY
-// ==========================================
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-    
     if (sidebar) sidebar.classList.toggle("active");
-    if (overlay) overlay.classList.toggle("active");
-}
-
-function fecharSidebarMobile() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-    
-    if (sidebar) sidebar.classList.remove("active");
-    if (overlay) overlay.classList.remove("active");
 }
 
 function toggleMenuPerfil() {
