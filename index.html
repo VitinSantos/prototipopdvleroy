@@ -3,25 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Atividades PDV</title>
+    <title>Painel Administrativo - Discord Bot</title>
+    
+    <!-- CSS Externo -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Font Awesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js para Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
     <!-- TELA DE LOGIN -->
     <div id="login-screen" class="screen active">
         <div class="login-card">
-            <h2>Login PDV</h2>
-            <form onsubmit="fazerLogin(event)">
+            <div class="login-header">
+                <i class="fa-brands fa-discord login-logo"></i>
+                <h2>Painel de Controle</h2>
+                <p>Faça login para gerenciar o sistema</p>
+            </div>
+            
+            <form id="login-form" onsubmit="realizarLogin(event)">
                 <div class="input-group">
-                    <label>Usuário</label>
-                    <input type="text" id="usuario" placeholder="Digite seu nome de usuário" required>
+                    <label for="login-username">Usuário</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="login-username" placeholder="Digite seu usuário" required>
+                    </div>
                 </div>
+
                 <div class="input-group">
-                    <label>Senha</label>
-                    <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    <label for="login-password">Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Digite sua senha" required>
+                    </div>
                 </div>
-                <button type="submit" class="btn-primary">Entrar</button>
+
+                <div id="login-error" class="error-message"></div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Entrar</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </form>
         </div>
     </div>
@@ -29,224 +60,392 @@
     <!-- TELA PRINCIPAL (APP) -->
     <div id="app-screen" class="screen">
         <div class="app-container">
-            
+
+            <!-- OVERLAY PARA FECHAR O MENU MOBILE CLICANDO FORA -->
+            <div id="sidebar-overlay" class="sidebar-overlay" onclick="fecharSidebarMobile()"></div>
+
             <!-- MENU LATERAL (SIDEBAR) -->
             <aside id="sidebar" class="sidebar">
                 <div class="sidebar-header">
-                    <div class="avatar" id="sidebar-avatar">V</div>
-                    <div>
-                        <h4 id="user-display">Usuário</h4>
-                        <span id="user-role" class="badge-role">Cargo</span>
+                    <i class="fa-brands fa-discord brand-icon"></i>
+                    <span class="brand-name">Bot Manager</span>
+                    <button class="close-sidebar-btn" onclick="toggleSidebar()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="user-profile-summary">
+                    <div class="avatar-container">
+                        <img id="sidebar-user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+                        <span class="status-indicator online"></span>
+                    </div>
+                    <div class="user-info">
+                        <span id="sidebar-user-name" class="user-name">Carregando...</span>
+                        <span id="sidebar-user-role" class="user-role">Membro</span>
                     </div>
                 </div>
-                
+
                 <nav class="sidebar-nav">
-                    <button class="nav-btn active" id="btn-tab-dashboard" onclick="mudarAba('dashboard')">
-                        📊 Dashboard
-                    </button>
-                    <button class="nav-btn" id="btn-tab-atividades" onclick="mudarAba('atividades')">
-                        📝 Atividades
-                    </button>
-                    <button class="nav-btn" id="btn-tab-historico" onclick="mudarAba('historico')">
-                        📋 Histórico
-                    </button>
-                    <button class="nav-btn" id="btn-tab-equipe" onclick="mudarAba('equipe')">
-                        👥 Equipe
-                    </button>
-                    <button class="nav-btn" id="btn-tab-sessoes" onclick="mudarAba('sessoes')">
-                        🏢 Sessões
-                    </button>
-                    <button class="nav-btn" id="btn-tab-cargos" onclick="mudarAba('cargos')">
-                        🛡️ Cargos
-                    </button>
-                    <button class="nav-btn" id="btn-tab-permissoes" onclick="mudarAba('permissoes')">
-                        🔐 Permissões
-                    </button>
-                    <button class="nav-btn" id="btn-tab-perfil" onclick="mudarAba('perfil')">
-                        ⚙️ Meu Perfil
-                    </button>
+                    <ul>
+                        <li>
+                            <button id="btn-tab-dashboard" class="nav-btn active" onclick="mudarAba('dashboard')">
+                                <i class="fa-solid fa-chart-pie"></i>
+                                <span>Dashboard</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-atividades" class="nav-btn" onclick="mudarAba('atividades')">
+                                <i class="fa-solid fa-tasks"></i>
+                                <span>Atividades</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-historico" class="nav-btn" onclick="mudarAba('historico')">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <span>Histórico</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-equipe" class="nav-btn" onclick="mudarAba('equipe')">
+                                <i class="fa-solid fa-users"></i>
+                                <span>Equipe</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-sessoes" class="nav-btn" onclick="mudarAba('sessoes')">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Sessões Ativas</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-cargos" class="nav-btn" onclick="mudarAba('cargos')">
+                                <i class="fa-solid fa-id-card"></i>
+                                <span>Cargos</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-permissoes" class="nav-btn" onclick="mudarAba('permissoes')">
+                                <i class="fa-solid fa-key"></i>
+                                <span>Permissões</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="btn-tab-perfil" class="nav-btn" onclick="mudarAba('perfil')">
+                                <i class="fa-solid fa-user-gear"></i>
+                                <span>Meu Perfil</span>
+                            </button>
+                        </li>
+                    </ul>
                 </nav>
 
                 <div class="sidebar-footer">
-                    <button class="btn-logout" onclick="fazerLogout()">Sair do Sistema</button>
+                    <button class="nav-btn logout-btn" onclick="realizarLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Sair</span>
+                    </button>
                 </div>
             </aside>
 
             <!-- CONTEÚDO PRINCIPAL -->
             <main class="main-content">
-                <header class="topbar">
-                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-                    <h2>Painel de Controle</h2>
-                    
-                    <!-- MENU PERFIL TOPO -->
-                    <div class="user-profile-wrapper" style="position: relative;">
-                        <div class="user-profile-trigger" onclick="toggleMenuPerfil()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <div class="avatar-sm" id="dropdown-avatar" style="width: 35px; height: 35px; background: #004834; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">V</div>
-                            <span id="dropdown-nome" style="font-weight: 500;">Usuário</span>
-                        </div>
-                        
-                        <div id="profile-dropdown" class="profile-dropdown-card" style="display: none; position: absolute; right: 0; top: 45px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 220px; padding: 15px; z-index: 1000;">
-                            <p style="font-weight: bold; margin-bottom: 5px;" id="dropdown-nome-card">Usuário</p>
-                            <p style="font-size: 12px; color: #666; margin-bottom: 15px;" id="dropdown-email">Sessão: Geral</p>
-                            <button class="btn-secondary" onclick="mudarAba('perfil'); toggleMenuPerfil();" style="width: 100%; font-size: 13px; padding: 6px;">Meu Perfil</button>
+                
+                <!-- HEADER SUPERIOR -->
+                <header class="top-header">
+                    <div class="header-left">
+                        <button class="menu-toggle" onclick="toggleSidebar()">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <h1 id="page-title">Dashboard</h1>
+                    </div>
+                    <div class="header-right">
+                        <button class="icon-btn" onclick="atualizarDadosAtuais()" title="Atualizar Dados">
+                            <i class="fa-solid fa-rotate"></i>
+                        </button>
+                        <div class="theme-toggle">
+                            <i class="fa-solid fa-moon"></i>
                         </div>
                     </div>
                 </header>
 
+                <!-- ÁREA DE CONTEÚDO DAS ABAS -->
                 <div class="content-body">
 
                     <!-- ABA DASHBOARD -->
-                    <div id="tab-dashboard" class="tab-content active">
-                        <div class="filtros-dashboard">
-                            <div class="input-group">
-                                <label>Período</label>
-                                <select id="filtro-periodo" onchange="toggleFiltroPersonalizado(); atualizarDashboard();">
-                                    <option value="hoje">Hoje</option>
-                                    <option value="semana">Esta Semana</option>
-                                    <option value="mes">Este Mês</option>
-                                    <option value="personalizado">Personalizado</option>
-                                </select>
-                            </div>
-                            
-                            <div id="filtro-datas" style="display: none; gap: 10px;">
-                                <div class="input-group">
-                                    <label>Início</label>
-                                    <input type="date" id="filtro-data-inicio" onchange="atualizarDashboard()">
+                    <section id="tab-dashboard" class="tab-content active">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-icon blue">
+                                    <i class="fa-solid fa-list-check"></i>
                                 </div>
-                                <div class="input-group">
-                                    <label>Fim</label>
-                                    <input type="date" id="filtro-data-fim" onchange="atualizarDashboard()">
+                                <div class="metric-data">
+                                    <span class="metric-label">Total de Atividades</span>
+                                    <h3 id="dash-total-atividades">0</h3>
                                 </div>
                             </div>
 
-                            <div class="input-group">
-                                <label>Sessão</label>
-                                <select id="filtro-sessao" onchange="atualizarDashboard()">
-                                    <option value="todas">Todas</option>
-                                </select>
+                            <div class="metric-card">
+                                <div class="metric-icon green">
+                                    <i class="fa-solid fa-check-double"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Concluídas</span>
+                                    <h3 id="dash-atividades-concluidas">0</h3>
+                                </div>
                             </div>
 
-                            <div class="input-group">
-                                <label>Colaborador</label>
-                                <select id="filtro-colaborador" onchange="atualizarDashboard()">
-                                    <option value="todos">Todos</option>
-                                </select>
+                            <div class="metric-card">
+                                <div class="metric-icon yellow">
+                                    <i class="fa-solid fa-spinner"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Em Andamento</span>
+                                    <h3 id="dash-atividades-andamento">0</h3>
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-icon purple">
+                                    <i class="fa-solid fa-users-gear"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Membros da Equipe</span>
+                                    <h3 id="dash-total-equipe">0</h3>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="kpi-grid">
-                            <div class="kpi-card">
-                                <h3>IRC</h3>
-                                <p id="kpi-irc">0</p>
+                        <div class="charts-grid">
+                            <div class="card chart-card">
+                                <div class="card-header">
+                                    <h3>Status das Atividades</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chart-status-atividades"></canvas>
+                                </div>
                             </div>
-                            <div class="kpi-card">
-                                <h3>Moki</h3>
-                                <p id="kpi-moki">0</p>
-                            </div>
-                            <div class="kpi-card">
-                                <h3>Ruptura</h3>
-                                <p id="kpi-ruptura">0</p>
-                            </div>
-                            <div class="kpi-card">
-                                <h3>Reapro</h3>
-                                <p id="kpi-reapro">0</p>
-                            </div>
-                            <div class="kpi-card">
-                                <h3>Auditoria</h3>
-                                <p id="kpi-auditoria">0</p>
-                            </div>
-                            <div class="kpi-card">
-                                <h3>Pallets Abast.</h3>
-                                <p id="kpi-abast">0</p>
-                            </div>
-                            <div class="kpi-card">
-                                <h3>Pallets Retornados</h3>
-                                <p id="kpi-ret">0</p>
+
+                            <div class="card chart-card">
+                                <div class="card-header">
+                                    <h3>Atividades por Membro</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chart-atividades-membro"></canvas>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
                     <!-- ABA ATIVIDADES -->
-                    <div id="tab-atividades" class="tab-content">
-                        <h3>Escolha a Atividade para Registrar</h3>
-                        <div class="atividades-grid">
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('IRC')">IRC</button>
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('Moki')">Moki</button>
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('Ruptura')">Ruptura</button>
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('Abastecimento')">Abastecimento</button>
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('Reapro')">Reapro</button>
-                            <button class="atividade-card-btn" onclick="iniciarFluxo('Auditoria')">Auditoria de Estoque</button>
-                        </div>
-                    </div>
-
-                    <!-- ABA HISTÓRICO -->
-                    <div id="tab-historico" class="tab-content">
-                        <div class="historico-filtros" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                            <input type="text" id="filtro-hist-nome" placeholder="Filtrar por colaborador..." onkeyup="filtrarHistorico()" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; flex: 1;">
-                            <input type="date" id="filtro-hist-data" onchange="filtrarHistorico()" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;">
-                            <button class="btn-secondary" onclick="limparFiltroHistorico()" style="width: auto; padding: 8px 15px;">Limpar Filtros</button>
-                        </div>
-                        <div id="lista-historico"></div>
-                    </div>
-
-                    <!-- ABA EQUIPE -->
-                    <div id="tab-equipe" class="tab-content">
-                        <h2>Gerenciamento de Colaboradores</h2>
-                        <div id="lista-equipe"></div>
-                    </div>
-
-                    <!-- ABA SESSÕES -->
-                    <div id="tab-sessoes" class="tab-content">
-                        <h2>Gerenciamento de Sessões</h2>
-                        <div id="lista-sessoes"></div>
-                    </div>
-
-                    <!-- ABA CARGOS -->
-                    <div id="tab-cargos" class="tab-content">
-                        <h2>Gerenciamento de Cargos</h2>
-                        <div id="lista-cargos"></div>
-                    </div>
-
-                    <!-- ABA PERMISSÕES -->
-                    <div id="tab-permissoes" class="tab-content">
-                        <h2>Gerenciamento de Permissões</h2>
-                        <div id="lista-permissoes"></div>
-                    </div>
-
-                    <!-- ABA PERFIL -->
-                    <div id="tab-perfil" class="tab-content">
-                        <h2>Meu Perfil</h2>
-                        <div class="perfil-card" style="background: white; padding: 25px; border-radius: 8px; max-width: 500px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                                <div id="perfil-avatar" style="width: 50px; height: 50px; background: #004834; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">V</div>
-                                <div>
-                                    <h3 id="perfil-nome-display" style="margin: 0;">Nome</h3>
-                                    <span id="perfil-cargo-display" style="color: #666; font-size: 14px;">Cargo</span>
+                    <section id="tab-atividades" class="tab-content">
+                        <div class="card">
+                            <div class="card-header space-between">
+                                <h3>Gerenciamento de Atividades</h3>
+                                <button class="btn btn-primary" onclick="abrirModalCriarAtividade()">
+                                    <i class="fa-solid fa-plus"></i> Nova Atividade
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Título</th>
+                                                <th>Responsável</th>
+                                                <th>Status</th>
+                                                <th>Prioridade</th>
+                                                <th>Data Criada</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-atividades">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            
-                            <div class="input-group" style="margin-bottom: 15px;">
-                                <label>Nova Senha de Acesso</label>
-                                <input type="password" id="nova-senha-perfil" placeholder="Digite sua nova senha">
-                            </div>
-                            
-                            <button class="btn-primary" onclick="alterarMinhaSenha()">Atualizar Senha</button>
                         </div>
-                    </div>
+                    </section>
+
+                    <!-- ABA HISTÓRICO -->
+                    <section id="tab-historico" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Histórico de Ações do Sistema</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Data/Hora</th>
+                                                <th>Usuário</th>
+                                                <th>Ação</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-historico">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ABA EQUIPE -->
+                    <section id="tab-equipe" class="tab-content">
+                        <div class="card">
+                            <div class="card-header space-between">
+                                <h3>Membros da Equipe</h3>
+                                <button class="btn btn-primary" onclick="abrirModalCriarMembro()">
+                                    <i class="fa-solid fa-user-plus"></i> Adicionar Membro
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuário</th>
+                                                <th>Discord ID</th>
+                                                <th>Cargo</th>
+                                                <th>Status</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-equipe">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ABA SESSÕES -->
+                    <section id="tab-sessoes" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Sessões Ativas no Painel</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuário</th>
+                                                <th>IP / Dispositivo</th>
+                                                <th>Último Acesso</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-sessoes">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ABA CARGOS -->
+                    <section id="tab-cargos" class="tab-content">
+                        <div class="card">
+                            <div class="card-header space-between">
+                                <h3>Cargos do Sistema</h3>
+                                <button class="btn btn-primary" onclick="abrirModalCriarCargo()">
+                                    <i class="fa-solid fa-plus"></i> Novo Cargo
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome do Cargo</th>
+                                                <th>Cor</th>
+                                                <th>Nível de Acesso</th>
+                                                <th>Membros Associados</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-cargos">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ABA PERMISSÕES -->
+                    <section id="tab-permissoes" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Matriz de Permissões por Cargo</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Módulo / Funcionalidade</th>
+                                                <th>Administrador</th>
+                                                <th>Moderador</th>
+                                                <th>Membro</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-permissoes">
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ABA PERFIL -->
+                    <section id="tab-perfil" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Configurações do Meu Perfil</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="form-perfil" onsubmit="salvarPerfil(event)">
+                                    <div class="form-grid">
+                                        <div class="input-group">
+                                            <label for="perfil-nome">Nome de Usuário</label>
+                                            <input type="text" id="perfil-nome" class="form-control" required>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="perfil-discord-id">ID do Discord</label>
+                                            <input type="text" id="perfil-discord-id" class="form-control" readonly disabled>
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="perfil-senha-atual">Senha Atual</label>
+                                            <input type="password" id="perfil-senha-atual" class="form-control" placeholder="Para alterar a senha">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="perfil-nova-senha">Nova Senha</label>
+                                            <input type="password" id="perfil-nova-senha" class="form-control" placeholder="Deixe em branco para manter">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
 
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- MODAL GLOBAL -->
-    <div id="modal-geral" class="modal-overlay" style="display: none;">
-        <div class="modal-card">
-            <span class="modal-close" onclick="fecharModal()">&times;</span>
-            <div id="modal-body"></div>
-        </div>
-    </div>
-
+    <!-- JS Externo -->
     <script src="script.js"></script>
 </body>
 </html>
