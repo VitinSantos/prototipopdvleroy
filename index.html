@@ -14,8 +14,8 @@
             <h2>Login PDV</h2>
             <form onsubmit="fazerLogin(event)">
                 <div class="input-group">
-                    <label>Usuário</label>
-                    <input type="text" id="usuario" placeholder="Digite seu nome de usuário" required>
+                    <label>E-mail ou nome do usuário</label>
+                    <input type="text" id="usuario" placeholder="Digite seu e-mail ou nome" autocomplete="username" required>
                 </div>
                 <div class="input-group">
                     <label>Senha</label>
@@ -71,6 +71,7 @@
                     <button class="btn-logout" onclick="fazerLogout()">Sair do Sistema</button>
                 </div>
             </aside>
+            <div id="sidebar-overlay" class="sidebar-overlay" onclick="fecharSidebar()"></div>
 
             <!-- CONTEÚDO PRINCIPAL -->
             <main class="main-content">

@@ -125,18 +125,34 @@ function temPermissao(permissaoId) {
 
 async function fazerLogin(event) {
     event.preventDefault();
-    const emailInput = document.getElementById("usuario").value.trim();
+    const identificador = document.getElementById("usuario").value.trim();
     const passInput = document.getElementById("senha").value.trim();
 
     if (!_supabase) return alert("❌ Supabase não configurado.");
 
     try {
+        let emailInput = identificador;
+
+        // O Auth do Supabase autentica por e-mail, mas a tela também aceita o nome cadastrado.
+        if (!identificador.includes('@')) {
+            const { data: usuarioPorNome } = await _supabase
+                .from('usuarios')
+                .select('email')
+                .ilike('nome', identificador)
+                .maybeSingle();
+
+            if (usuarioPorNome?.email) emailInput = usuarioPorNome.email;
+        }
+
         const { data, error } = await _supabase.auth.signInWithPassword({ 
             email: emailInput, 
             password: passInput 
         });
 
         if (error) {
+            if (String(error.message || '').toLowerCase().includes('invalid login credentials')) {
+                return alert("❌ E-mail/nome ou senha inválidos. Use o e-mail ou nome cadastrado e a senha definida no Supabase Auth.");
+            }
             return alert("❌ Falha no Login: " + error.message);
         }
 
@@ -215,6 +231,7 @@ function fazerLogout() {
 function mudarAba(aba) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    fecharSidebar();
 
     const tabEl = document.getElementById(`tab-${aba}`);
     const btnEl = document.getElementById(`btn-tab-${aba}`);
@@ -234,7 +251,18 @@ function mudarAba(aba) {
 
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
-    if (sidebar) sidebar.classList.toggle("active");
+    const overlay = document.getElementById("sidebar-overlay");
+    if (!sidebar) return;
+
+    const isOpen = sidebar.classList.toggle("active");
+    if (overlay) overlay.classList.toggle("active", isOpen);
+}
+
+function fecharSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebar-overlay");
+    if (sidebar) sidebar.classList.remove("active");
+    if (overlay) overlay.classList.remove("active");
 }
 
 function toggleMenuPerfil() {
@@ -830,6 +858,7 @@ async function salvarFormUsuario(nomeOriginal) {
     const sessao = document.getElementById("form-user-sessao").value;
     const senhaEl = document.getElementById("form-user-senha");
     const senha = senhaEl ? senhaEl.value.trim() : null;
+    let contaAuthJaExistia = false;
 
     if (!nome || !email) return alert("❌ Preencha os campos obrigatórios.");
 
@@ -845,7 +874,12 @@ async function salvarFormUsuario(nomeOriginal) {
             });
 
             if (authErr) {
-                return alert("❌ Erro ao criar conta de autenticação no Supabase: " + authErr.message);
+                const mensagemAuth = String(authErr.message || '').toLowerCase();
+                if (mensagemAuth.includes('user already registered')) {
+                    contaAuthJaExistia = true;
+                } else {
+                    return alert("❌ Erro ao criar conta de autenticação no Supabase: " + authErr.message);
+                }
             }
         }
     }
@@ -863,15 +897,19 @@ async function salvarFormUsuario(nomeOriginal) {
             cargo: cargo,
             cargo_id: cargoId,
             sessao: sessao,
-            ativo: true,
-            senha_hash: senha || "123456"
+            ativo: true
         };
+
+        // A senha da conta Auth existente não pode ser alterada pelo cliente.
+        if (!contaAuthJaExistia) payload.senha_hash = senha || "123456";
 
         const { error: dbErr } = await _supabase.from('usuarios').upsert([payload], { onConflict: 'nome' });
         if (dbErr) return alert("❌ Erro ao salvar colaborador na tabela de dados: " + dbErr.message);
     }
 
-    if (!nomeOriginal) {
+    if (!nomeOriginal && contaAuthJaExistia) {
+        alert("⚠️ A conta de autenticação já existia. O colaborador foi cadastrado, mas a senha continua sendo a senha original dessa conta.");
+    } else if (!nomeOriginal) {
         alert(`✅ Colaborador cadastrado com sucesso!\n\nE-mail: ${email}\nSenha: ${senha}\n\nGuarde esta senha para realizar o login.`);
     } else {
         alert("✅ Colaborador atualizado com sucesso!");
